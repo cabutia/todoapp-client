@@ -1,0 +1,11 @@
+.to-do-list
+  position: fixed
+  top: calc(#{$frameNavigation__Height} + #{$toolbar__Height})
+  left: $sidebar__Width
+  height: calc(100vh - #{$frameNavigation__Height})
+  width: calc(100vw - #{$sidebar__Width})
+
+  transition: left 0.3s ease, width 0.3s ease
+
+  @media screen and (max-width: 700px)
+    width: 100vw

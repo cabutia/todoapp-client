@@ -1,0 +1,108 @@
+.frame-navigation
+  position: fixed
+  top: 0
+  left: 0
+  width: 100vw
+  height: $frameNavigation__Height
+  padding: 0
+  background-color: $frameNavigation__BackgroundColor
+  -webkit-app-region: drag
+  z-index: $index__NavigationFrame
+  border-bottom: 1px solid darken($frameNavigation__BackgroundColor, 5%)
+
+  ul
+    position: relative
+    padding: 0 20px
+    height: $frameNavigation__Height
+    display: flex
+    justify-content: flex-end
+    align-items: center
+    flex-direction: row
+    margin: 0
+    list-style: none
+    -webkit-app-region: drag
+
+    li.sidebar-collapse
+      display: flex
+      position: relative
+      text-align: center
+      font-size: 16pt
+      text-transform: uppercase
+      cursor: pointer
+      flex-direction: column
+      transition: background-color 0.3s ease
+      line-height: $frameNavigation__Height
+      height: $frameNavigation__Height
+      min-width: $frameNavigation__Width
+      color: $frameNavigation__FontColor
+      align-items: center
+      justify-content: center
+      padding: 0 10px
+      overflow-y: hidden
+      -webkit-app-region: no-drag
+
+    li.title
+      height: 100%
+      left: 20px
+      top: 0
+      width: calc(#{$sidebar__Width} - 20px)
+      justify-content: center
+      align-items: center
+      margin-right: auto
+      font-size: 30pt
+      font-weight: 200
+      line-height: $frameNavigation__Height
+      color: $frameNavigation__FontColor
+      -webkit-app-region: drag
+      border-right: 1px solid darken($frameNavigation__BackgroundColor, 5%)
+
+      @media screen and (max-width: 700px)
+        display: none
+
+
+    li.frame-item
+      display: flex
+      position: relative
+      text-align: center
+      font-size: 10pt
+      text-transform: uppercase
+      cursor: pointer
+      flex-direction: column
+      transition: background-color 0.3s ease
+      line-height: $frameNavigation__Height
+      height: $frameNavigation__Height
+      min-width: $frameNavigation__Width
+      color: $frameNavigation__FontColor
+      align-items: center
+      justify-content: center
+      padding: 0 10px
+      overflow-y: hidden
+      -webkit-app-region: no-drag
+
+      &::before
+        content: ''
+        position: absolute
+        top: 100%
+        left: 0
+        width: 100%
+        height: $frameNavigation__Height
+        background-color: $frameNavigation__BackgroundColor
+        transition: top 0.2s ease, background-color 0.2s ease
+
+      i.fa:not(.backlight)
+        transform: translateY(50%)
+        transition: transform 0.2s ease
+
+      i.fa.backlight
+        transform: translateY($frameNavigation__Height)
+        transition: transform 0.2s ease
+
+      &:hover
+        &::before
+          top: 0
+
+        i.fa:not(.backlight)
+          transform: translateY(-$frameNavigation__Height)
+
+        i.fa.backlight
+          transform: translateY(-50%)
