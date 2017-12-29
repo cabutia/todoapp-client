@@ -19,23 +19,37 @@ export default {
         el: null,
         visible: false,
         items: [],
-        minWidth: 300
+        minWidth: 300,
+        activatesOn: ['.to-do-list']
       },
+      selector: '.cm',
       menu: EnvData.cm.items,
-      actions: EnvData.cm.actions
+      actions: EnvData.cm.actions,
+      events: {
+        open: 'cm-fired',
+        close: 'cm-close'
+      }
     }
   },
 
   mounted () {
     this.init()
-    EventBus.$on('cm-fired', this.open)
-    EventBus.$on('cm-close', this.close)
+    EventBus.$on(this.events.open, this.open)
+    EventBus.$on(this.events.close, this.close)
   },
 
   methods: {
 
     init () {
-      this.cm.el = document.querySelector('.cm')
+      this.cm.el = document.querySelector(this.selector)
+      document.addEventListener('click', e => {
+        EventBus.$emit(this.events.close)
+      })
+      for (var i = 0; i < this.cm.activatesOn.length; i++) {
+        let element = document.querySelector(this.cm.activatesOn[i]) || false
+        if (!element) return
+        element.addEventListener('contextmenu', this.open)
+      }
       this.cm.visible = false
     },
 
@@ -44,7 +58,8 @@ export default {
       this.cm.el.style.display = 'none'
     },
 
-    open (cm) {
+    open (e) {
+      let cm = this.getElement(e)
       if (!cm) return false
       this.fillMenu(cm.type)
       this.toggleVisibility()
@@ -70,6 +85,16 @@ export default {
 
     fillMenu (type) {
       this.cm.items = this.menu[type]
+    },
+
+    getElement (ev) {
+      let el = ev.toElement
+      let cm = {
+        type: el.getAttribute('cm-type'),
+        x: ev.clientX,
+        y: ev.clientY
+      }
+      return cm
     }
 
   }

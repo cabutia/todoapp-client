@@ -1,6 +1,14 @@
 <template lang="html">
   <div class="to-do-list">
-    <ToDoItem v-for="item in items" v-bind:item="item" v-bind:key="item.id"/>
+    <div class="ps">
+      <ToDoItem v-for="item in items" v-bind:item="item" v-bind:key="item.id" v-if="items.length > 0"/>
+      <div class="no-items" v-if="items.length == 0">
+        <div class="message">
+          <h1>No se encontraron tareas</h1>
+          <h3>Presione <i class="fa fa-refresh"></i> para recargar</h3>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -9,26 +17,26 @@ import axios from 'axios'
 import { EnvData } from '../env'
 import { EventBus } from '../events'
 import ToDoItem from './ToDoItem.vue'
+import PerfectScrollbar from 'perfect-scrollbar'
 
 export default {
   name: 'ToDoList',
   components: { ToDoItem },
 
   mounted() {
+    EventBus.$on('new-task-added', this.addTodo)
+    EventBus.$on('fire-refresh-tasks', this.getTodos)
+    const ps = new PerfectScrollbar('.ps')
     this.getTodos()
-    let todos = document.querySelectorAll('.todo')
-    for (var i = 0; i < todos.length; i++) {
-      todos[i].addEventListener('contextmenu', e => this.handleRightClick(e))
-    }
-    document.addEventListener('click', e => this.handleLeftClick(e))
   },
 
   methods: {
     getTodos () {
       let url = 'http://dev.lumen/todos/all'
       axios.get(url).then(response => {
+        console.log(response.data)
         this.items = this.parseTodos(response.data)
-      })
+      }).catch(ex => console.log(ex))
     },
 
     parseTodos (array) {
@@ -42,28 +50,16 @@ export default {
       return todos
     },
 
-    cmCanBeOpened (e) {
-      let isClickable = false
-      let element = null
-      let data = null
-      for (var i = 0; i < e.path.length; i++) {
-        if (e.path[i].className == 'todo') {
-          element = e.path[i]
-          isClickable = true
-          break
-        }
-      }
-      if (!isClickable) return false
-      return data = { x: e.clientX, y: e.clientY, type: element.getAttribute('cm-type') }
+    addTodo (data) {
+      this.visible = false
+      this.items.push(this.parseTodoStyle(data))
     },
 
-    handleRightClick (e) {
-      let cm = this.cmCanBeOpened(e)
-      cm ? EventBus.$emit('cm-fired', cm) : EventBus.$emit('cm-close', {})
-    },
-
-    handleLeftClick (e) {
-      EventBus.$emit('cm-close', {})
+    parseTodoStyle (todo) {
+      let newTodo = todo
+      newTodo.status = this.statusStyles['status' + todo.status.toString()]
+      newTodo.category.style = JSON.parse(todo.category.style)
+      return newTodo
     }
 
   },
@@ -71,31 +67,8 @@ export default {
   data () {
     return {
       statusStyles: EnvData.statusStyles,
-
       items: []
-      // {
-      //   objId: "ITEM-4221543",
-      //   title: 'Hacer la aplicacion de la lista de tareas',
-      //   description: 'Realizar la aplicacion de la lista de tareas, en lo\
-      //   posible hoy (27/12/2017), para asi poder llevar un control.',
-      //   category: {
-      //     title: 'Desarrollo',
-      //     style: {
-      //       'background-color': 'hsla(190, 100%, 45%, 0.7)',
-      //       'color': 'hsla(0, 0%, 0%, 0.7)'
-      //     }
-      //   },
-      //   status: {
-      //     flag: 'Pendiente',
-      //     style: {
-      //       'background-color':'hsl(20, 100%, 50%)',
-      //       'color':'hsl(20, 100%, 50%)'
-      //     }
-      //   }
-      // },
     }
   }
 }
 </script>
-
-<style lang="css"></style>

@@ -1,0 +1,172 @@
+.modal-wrapper
+  position: fixed
+  width: 100%
+  height: 100%
+  top: 0
+  left: 0
+  display: flex
+  justify-content: center
+  align-items: center
+  z-index: 1000000
+  background-color: $UI__ModalWrapperBackground
+
+  .modal
+    background-color: $UI__BackgroundColorLight
+    padding: 20px
+    min-width: 400px
+    box-shadow: 0px 2px 2px rgba(0,0,0,0.1), 0px 10px 20px rgba(0,0,0,0.2)
+
+    .select-wrapper
+      position: relative
+
+      .selected
+        border-radius: 3px
+        padding: 5px 10px
+        background-color: lighten($UI__BackgroundColorLight, 5%)
+
+      .options
+        position: absolute
+        width: 100%
+        top: 0
+        left: 0
+        margin: 0
+        border-radius: 3px
+        background-color: lighten($UI__BackgroundColorLight, 5%)
+        box-shadow: 0px 2px 2px rgba(0,0,0,0.1), 0px 10px 20px rgba(0,0,0,0.2)
+
+    .error-wrapper
+      padding: 10px
+      margin-bottom: 20px
+      border-radius: 3px
+      background-color: $UI__ErrorBackgroundColor
+      color: $UI__ErrorColor
+      text-shadow: 0px 1px 0px rgba(0,0,0,0.2)
+      .error
+        margin: 0
+
+    .input-wrapper
+      position: relative
+      padding-top: calc(10pt)
+      padding-bottom: 10px
+
+      .input,
+      textarea
+        resize: none
+        margin-top: 5px
+        width: 100%
+        padding: 5px 10px
+        border: 1px solid transparent
+        border-radius: 4px
+        background-color: lighten($UI__BackgroundColorLight, 10%)
+        color: $UI__PrimaryColor
+
+        &:focus
+          border-color: $UI__HighlightColor
+
+          &+label
+            color: $UI__HighlightColor
+
+      label
+        position: absolute
+        top: 0
+        left: 0
+        font-size: 9pt
+        text-transform: uppercase
+        color: $UI__TertiaryColor
+
+    .form-footer-wrapper
+      margin-top: 20px
+      display: flex
+      justify-content: flex-start
+      align-items: center
+
+.button
+  width: auto
+  margin-left: auto
+  padding: 5px 10px
+  border: 1px solid transparent
+  cursor: pointer
+  border-radius: 3px
+  font-size: 9pt
+  color: $UI__PrimaryColor
+  text-transform: uppercase
+  background-color: lighten($UI__BackgroundColorLight, 5%)
+
+  &:hover,
+  &:focus
+    border: 1px solid $UI__HighlightColor
+    box-shadow: 0px 0px 5px transparentize($UI__HighlightColor, 0.5)
+    color: $UI__HighlightColor
+
+.color-selector-wrapper
+  display: flex
+  justify-content: space-between
+  padding-top: 20px
+
+  .color-selector
+
+    width: 150px
+    height: 150px
+    display: flex
+    justify-content: center
+    align-items: center
+    flex-direction: column
+    padding: 0
+    transform: rotate(-90deg)
+
+    .input-range-wrapper
+      position: relative
+      width: 150px
+      margin: 0
+
+      .selector
+        display: block
+        margin: 0
+        width: calc(100% - 20pt)
+        height: 40px
+        -webkit-appearance: none
+        background-color: transparent
+
+        &::-webkit-slider-thumb
+          -webkit-appearance: none
+          width: 8px
+          height: 20px
+          background-color: lighten($UI__BackgroundColorLight, 10%)
+          border-radius: 3px
+          margin-top: -8px
+
+        &::-webkit-slider-runnable-track
+          -webkit-appearance: none
+          background-color: $UI__BackgroundColorDark
+          width: 100%
+          height: 4px
+
+        &:focus::-webkit-slider-runnable-track
+          background-color: darken($UI__BackgroundColorDark, 2%)
+
+        &:focus::-webkit-slider-thumb
+          border: 1px solid $UI__HighlightColor
+          box-shadow: 0px 0px 5px transparentize($UI__HighlightColor, 0.5)
+
+        &+label
+          font-size: 9pt
+          text-align: center
+          width: 40px
+          position: absolute
+          transform-origin: left top
+          transform: rotate(90deg) translateY(-200%)
+          top: 0
+          right: 0
+          color: $UI__TertiaryColor
+
+  .color-result
+    display: flex
+    justify-content: center
+    align-items: center
+    width: 150px
+    height: 150px
+    border: 1px solid rgba(255,255,255,0.3)
+    color: #000
+    font-size: 9pt
+    text-transform: uppercase
+    text-shadow: 0px 0px 10px rgba(255,255,255,0.7)

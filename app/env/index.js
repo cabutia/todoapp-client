@@ -21,11 +21,6 @@ export const EnvData = {
           icon: 'fa-check'
         },{
           title: false,
-          display: 'Suspender',
-          action: 'dothat',
-          icon: 'fa-pause'
-        },{
-          title: false,
           display: 'Archivar',
           action: 'dothat',
           icon: 'fa-file'
@@ -34,6 +29,11 @@ export const EnvData = {
           display: 'Cambiar de categoria',
           action: 'dothat',
           icon: 'fa-list-ol'
+        },{
+          title: false,
+          display: 'Eliminar',
+          action: 'dothat',
+          icon: 'fa-close'
         }
       ]
     },
