@@ -1,14 +1,15 @@
 .to-do-list
   position: fixed
-  top: calc(#{$frameNavigation__Height} + #{$toolbar__Height})
+  top: calc(#{$frameNavigation__Height})
   left: $sidebar__Width
-  height: calc(100vh - #{$frameNavigation__Height} - #{$toolbar__Height})
+  height: calc(100vh - #{$frameNavigation__Height})
   width: calc(100vw - #{$sidebar__Width})
 
   transition: left 0.3s ease, width 0.3s ease
 
   @media screen and (max-width: 700px)
     width: 100vw
+    left: 0
   .ps
     position: relative
     width: 100%
@@ -32,6 +33,17 @@
     i.fa
       color: $UI__SecondaryColor
       padding: 5px
+
+    a, a:visited
+      color: $UI__PrimaryColor
+      font-weight: 600
+      text-transform: uppercase
+      text-decoration: none
+      padding: 0 5px
+
+      i.fa
+        color: $UI__PrimaryColor
+        padding: 0
 
     &:hover
       i.fa

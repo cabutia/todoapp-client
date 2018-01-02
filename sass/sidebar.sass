@@ -27,14 +27,9 @@
       text-transform: uppercase
       color: $UI__SecondaryColor
       margin-bottom: 15px
-
-    .item-title
-      color: $UI__PrimaryColor
-      padding: 10px 0 10px 20px
       display: flex
       justify-content: flex-start
       align-items: center
-      cursor: pointer
 
       .actions
         opacity: 0
@@ -43,6 +38,30 @@
         transition: opacity 0.2s ease
 
         .action
+          cursor: pointer
+          padding: 5px
+          &:hover
+            color: $UI__PrimaryColor
+
+      &:hover
+        .actions
+          opacity: 1
+
+    .item-title
+      color: $UI__PrimaryColor
+      padding: 10px 0 10px 20px
+      display: flex
+      justify-content: flex-start
+      align-items: center
+
+      .actions
+        opacity: 0
+        margin-left: auto
+        color: $UI__TertiaryColor
+        transition: opacity 0.2s ease
+
+        .action
+          cursor: pointer
           padding: 5px
           &:hover
             color: $UI__PrimaryColor

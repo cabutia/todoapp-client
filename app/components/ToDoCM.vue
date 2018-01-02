@@ -1,7 +1,10 @@
 <template lang="html">
   <ul class="cm">
-    <li v-for="item in cm.items" v-bind:class="{ 'cm-text': item.title, 'cm-action': !item.title }" v-on:click="actions[item.action](item.display)">
-      {{ item.display }}<i class="fa" v-bind:class="item.icon"></i>
+    <li v-for="item in cm.items"
+        v-bind:class="{ 'cm-text': item.title, 'cm-action': !item.title }"
+        v-on:click="actions[item.action](item.id)">
+      {{ item.display }}
+    <i class="fa" v-bind:class="item.icon"></i>
     </li>
   </ul>
 </template>
@@ -16,6 +19,7 @@ export default {
   data () {
     return {
       cm: {
+        id: null,
         el: null,
         visible: false,
         items: [],
@@ -61,7 +65,7 @@ export default {
     open (e) {
       let cm = this.getElement(e)
       if (!cm) return false
-      this.fillMenu(cm.type)
+      this.fillMenu(cm)
       this.toggleVisibility()
       this.moveCm(cm)
     },
@@ -83,13 +87,18 @@ export default {
       this.cm.el.style.top = cm.y + 'px'
     },
 
-    fillMenu (type) {
-      this.cm.items = this.menu[type]
+    fillMenu (cm) {
+      this.cm.items = this.menu[cm.type]
+      this.cm.items = this.cm.items.map(item => {
+        item.id = cm.id
+        return item
+      })
     },
 
     getElement (ev) {
       let el = ev.toElement
       let cm = {
+        id: el.getAttribute('item-id'),
         type: el.getAttribute('cm-type'),
         x: ev.clientX,
         y: ev.clientY

@@ -57,7 +57,7 @@ export default {
     open (category) {
       this.visible = true
       this.task.category = category
-      console.log('Add task to category ' + this.category)
+      console.log('Add task to category ' + this.task.category.title)
     },
 
     close (e) {
@@ -68,12 +68,14 @@ export default {
     },
 
     reset () {
-      this.category = null
+      this.task.category = {}
     },
 
     save () {
       axios.post(this.url + 'todos/create', this.task.object).then(response => {
         EventBus.$emit('new-task-added', response.data)
+        this.visible = false
+        this.reset()
       }).catch(ex => console.log(ex))
     }
   }

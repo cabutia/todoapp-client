@@ -8786,6 +8786,7 @@ module.exports = g;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Sidebar_vue__ = __webpack_require__(54);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__ToDoList_vue__ = __webpack_require__(59);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__AddCategory_vue__ = __webpack_require__(66);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__EditCategory_vue__ = __webpack_require__(77);
 //
 //
 //
@@ -8796,6 +8797,7 @@ module.exports = g;
 //
 //
 //
+
 
 
 
@@ -8804,7 +8806,7 @@ module.exports = g;
 
 
 /* harmony default export */ __webpack_exports__["a"] = ({
-  components: { Sidebar: __WEBPACK_IMPORTED_MODULE_2__Sidebar_vue__["a" /* default */], ToDoList: __WEBPACK_IMPORTED_MODULE_3__ToDoList_vue__["a" /* default */], Toolbar: __WEBPACK_IMPORTED_MODULE_1__Toolbar_vue__["a" /* default */], AddTask: __WEBPACK_IMPORTED_MODULE_0__AddTask_vue__["a" /* default */], AddCategory: __WEBPACK_IMPORTED_MODULE_4__AddCategory_vue__["a" /* default */] },
+  components: { Sidebar: __WEBPACK_IMPORTED_MODULE_2__Sidebar_vue__["a" /* default */], ToDoList: __WEBPACK_IMPORTED_MODULE_3__ToDoList_vue__["a" /* default */], Toolbar: __WEBPACK_IMPORTED_MODULE_1__Toolbar_vue__["a" /* default */], AddTask: __WEBPACK_IMPORTED_MODULE_0__AddTask_vue__["a" /* default */], AddCategory: __WEBPACK_IMPORTED_MODULE_4__AddCategory_vue__["a" /* default */], EditCategory: __WEBPACK_IMPORTED_MODULE_5__EditCategory_vue__["a" /* default */] },
   name: 'HomePage'
 });
 
@@ -8927,7 +8929,7 @@ if (false) {(function () {
     open(category) {
       this.visible = true;
       this.task.category = category;
-      console.log('Add task to category ' + this.category);
+      console.log('Add task to category ' + this.task.category.title);
     },
 
     close(e) {
@@ -8938,12 +8940,14 @@ if (false) {(function () {
     },
 
     reset() {
-      this.category = null;
+      this.task.category = {};
     },
 
     save() {
       __WEBPACK_IMPORTED_MODULE_0_axios___default.a.post(this.url + 'todos/create', this.task.object).then(response => {
         __WEBPACK_IMPORTED_MODULE_1__events__["a" /* EventBus */].$emit('new-task-added', response.data);
+        this.visible = false;
+        this.reset();
       }).catch(ex => console.log(ex));
     }
   }
@@ -9583,6 +9587,11 @@ function applyToTag (styleElement, obj) {
 //
 //
 //
+//
+//
+//
+//
+//
 
 
 
@@ -9600,10 +9609,15 @@ function applyToTag (styleElement, obj) {
   mounted() {
     __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$on('category-added', this.addCategory);
     __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$on('category-deleted', this.deleteCategory);
+    __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$on('category-updated', this.updateCategories);
     this.getCategories();
   },
 
   methods: {
+    addNewCategory() {
+      __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('fire-category-modal');
+    },
+
     getCategories() {
       let url = 'http://dev.lumen/categories/all';
       __WEBPACK_IMPORTED_MODULE_1_axios___default.a.get(url).then(response => this.addCategory(response.data)).catch(ex => console.log(ex));
@@ -9621,13 +9635,32 @@ function applyToTag (styleElement, obj) {
       }
     },
 
+    editCategory(category) {
+      console.log(category.id);
+      __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('fire-category-edit-modal', category);
+    },
+
     deleteCategory(id) {
       console.log('Deleting ' + id);
       let url = `http://dev.lumen/categories/delete/${id}`;
       __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post(url, { id: id }).then(response => {
         this.categories = [];
         this.addCategory(response.data);
+        __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('fire-refresh-tasks');
       }).catch(ex => console.log(ex));
+    },
+
+    updateCategories(data) {
+      let categories = this.categories.map(category => {
+        if (category.id == data.id) {
+          let cat = category;
+          cat.title = data.title;
+          cat.style = JSON.parse(data.style.replace(/\'/g, '\"'));
+          return cat;
+        }
+        return category;
+      });
+      this.categories = categories;
     },
 
     parseData(r) {
@@ -9639,6 +9672,10 @@ function applyToTag (styleElement, obj) {
         categories.push(category);
       }
       return categories;
+    },
+
+    fireCategoryModal() {
+      __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('fire-category-modal');
     }
   }
 });
@@ -9679,18 +9716,36 @@ function applyToTag (styleElement, obj) {
   name: 'ToDoList',
   components: { ToDoItem: __WEBPACK_IMPORTED_MODULE_3__ToDoItem_vue__["a" /* default */] },
 
+  data() {
+    return {
+      statusStyles: __WEBPACK_IMPORTED_MODULE_1__env__["a" /* EnvData */].statusStyles,
+      items: []
+    };
+  },
+
   mounted() {
     __WEBPACK_IMPORTED_MODULE_2__events__["a" /* EventBus */].$on('new-task-added', this.addTodo);
     __WEBPACK_IMPORTED_MODULE_2__events__["a" /* EventBus */].$on('fire-refresh-tasks', this.getTodos);
-    const ps = new __WEBPACK_IMPORTED_MODULE_4_perfect_scrollbar__["a" /* default */]('.ps');
+    __WEBPACK_IMPORTED_MODULE_2__events__["a" /* EventBus */].$on('category-updated', this.updateCategoryColor);
+    __WEBPACK_IMPORTED_MODULE_2__events__["a" /* EventBus */].$on('task-status-update', this.updateStatus);
+    __WEBPACK_IMPORTED_MODULE_2__events__["a" /* EventBus */].$on('task-deleted', this.getTodos);
     this.getTodos();
+    const ps = new __WEBPACK_IMPORTED_MODULE_4_perfect_scrollbar__["a" /* default */]('.ps');
   },
 
   methods: {
+    updateStatus(updatedItem) {
+      this.items = this.items.map(item => {
+        if (item.id == updatedItem.id) {
+          item.status = this.statusStyles['status' + updatedItem.status.toString()];
+        }
+        return item;
+      });
+    },
+
     getTodos() {
       let url = 'http://dev.lumen/todos/all';
       __WEBPACK_IMPORTED_MODULE_0_axios___default.a.get(url).then(response => {
-        console.log(response.data);
         this.items = this.parseTodos(response.data);
       }).catch(ex => console.log(ex));
     },
@@ -9716,15 +9771,18 @@ function applyToTag (styleElement, obj) {
       newTodo.status = this.statusStyles['status' + todo.status.toString()];
       newTodo.category.style = JSON.parse(todo.category.style);
       return newTodo;
+    },
+
+    updateCategoryColor(data) {
+      this.items = this.items.map(item => {
+        if (item['category_id'] == data.id) {
+          item.category.title = data.title;
+          item.category.style = JSON.parse(data.style.replace(/\'/g, '\"'));
+        }
+        return item;
+      });
     }
 
-  },
-
-  data() {
-    return {
-      statusStyles: __WEBPACK_IMPORTED_MODULE_1__env__["a" /* EnvData */].statusStyles,
-      items: []
-    };
   }
 });
 
@@ -9733,11 +9791,16 @@ function applyToTag (styleElement, obj) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__events__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_axios__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_axios___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_axios__);
 /*
 | Here is where we can declare some static data, like menu types, menu items,
 | some global constants
 |
 */
+
+
 
 const EnvData = {
 
@@ -9746,34 +9809,78 @@ const EnvData = {
       'todo-item': [{
         title: true,
         display: 'Acciones sobre la tarea',
-        action: 'dothat',
-        icon: ''
+        action: 'nothing',
+        icon: '',
+        id: null
       }, {
         title: false,
-        display: 'Dar por terminada',
-        action: 'dothat',
-        icon: 'fa-check'
+        display: 'Completa',
+        action: 'setStatusCompleted',
+        icon: 'fa-check',
+        id: null
       }, {
         title: false,
         display: 'Archivar',
-        action: 'dothat',
-        icon: 'fa-file'
+        action: 'setStatusArchived',
+        icon: 'fa-file',
+        id: null
       }, {
         title: false,
-        display: 'Cambiar de categoria',
-        action: 'dothat',
-        icon: 'fa-list-ol'
+        display: 'Pendiente',
+        action: 'setStatusPending',
+        icon: 'fa-circle-o',
+        id: null
       }, {
         title: false,
         display: 'Eliminar',
-        action: 'dothat',
-        icon: 'fa-close'
+        action: 'delete',
+        icon: 'fa-close',
+        id: null
       }]
     },
     actions: {
 
-      dothat: title => {
-        console.log(title);
+      setStatusArchived: id => {
+        __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post('http://dev.lumen/todos/update', {
+          id: id,
+          status: '-1'
+        }).then(response => {
+          console.log(response.data);
+          __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('task-status-update', { id: id, status: '-1' });
+        });
+      },
+
+      setStatusCompleted: id => {
+        __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post('http://dev.lumen/todos/update', {
+          id: id,
+          status: '1'
+        }).then(response => {
+          console.log(response.data);
+          __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('task-status-update', { id: id, status: '1' });
+        });
+      },
+
+      setStatusPending: id => {
+        __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post('http://dev.lumen/todos/update', {
+          id: id,
+          status: '0'
+        }).then(response => {
+          console.log(response.data);
+          __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('task-status-update', { id: id, status: '0' });
+        });
+      },
+
+      delete: id => {
+        __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post('http://dev.lumen/todos/delete/' + id, {
+          id: id
+        }).then(response => {
+          console.log(response.data);
+          __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('task-deleted', { id: response.data });
+        });
+      },
+
+      nothing: () => {
+        return false;
       }
 
     }
@@ -9781,15 +9888,15 @@ const EnvData = {
 
   statusStyles: {
     'status-1': {
-      flag: 'Archivado',
+      flag: 'archived',
       style: { 'color': 'hsl(0, 0%, 80%)' }
     },
     'status0': {
-      flag: 'Pendiente',
+      flag: 'waiting',
       style: { 'color': 'hsl(340, 80%, 60%)' }
     },
     'status1': {
-      flag: 'Compleado',
+      flag: 'completed',
       style: { 'color': 'hsl(170, 100%, 40%)' }
     }
   }
@@ -9802,6 +9909,14 @@ const EnvData = {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__events__ = __webpack_require__(2);
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -9815,9 +9930,26 @@ const EnvData = {
 //
 //
 
+
+
 /* harmony default export */ __webpack_exports__["a"] = ({
   name: 'ToDoItem',
-  props: ['item']
+  props: ['item'],
+  data() {
+    return {
+      collapsed: true
+    };
+  },
+
+  mounted() {
+    console.log(this);
+  },
+
+  methods: {
+    toggleCollapse() {
+      this.collapsed = !this.collapsed;
+    }
+  }
 });
 
 /***/ }),
@@ -9973,12 +10105,33 @@ const EnvData = {
 
 /* harmony default export */ __webpack_exports__["a"] = ({
   name: 'Frame',
+
+  mounted() {
+    this.isAlwaysOnTop = this.mainWindow.isAlwaysOnTop();
+  },
+
   data() {
     return {
-      mainWindow: __webpack_require__(70).remote.getCurrentWindow(),
+      electron: __webpack_require__(70).remote,
       sidebar: '.sidebar',
 
       items: [{
+        display: 'Stick on top',
+        icon: 'fa-lock',
+        special: '',
+        action: () => {
+          let top = this.mainWindow.isAlwaysOnTop();
+          let winsize = {
+            w: 1100,
+            h: 800
+          };
+          this.mainWindow.setAlwaysOnTop(!top);
+
+          this.mainWindow.setMovable(!top ? false : true);
+          this.mainWindow.setSize(!top ? 300 : winsize.w, !top ? this.screen.height : winsize.h);
+          this.mainWindow.setPosition(!top ? this.screen.width - 300 : (this.screen.width - winsize.w) / 2, !top ? 0 : (this.screen.height - winsize.h) / 2);
+        }
+      }, {
         display: 'Fullscreen',
         icon: 'fa-expand',
         special: '',
@@ -10010,6 +10163,15 @@ const EnvData = {
     };
   },
 
+  computed: {
+    mainWindow() {
+      return this.electron.getCurrentWindow();
+    },
+    screen() {
+      return this.electron.screen.getPrimaryDisplay().workAreaSize;
+    }
+  },
+
   methods: {
     collapseSidebar() {
       let sidebar = document.querySelector(this.sidebar);
@@ -10033,6 +10195,9 @@ const EnvData = {
 //
 //
 //
+//
+//
+//
 
 
 
@@ -10043,6 +10208,7 @@ const EnvData = {
   data() {
     return {
       cm: {
+        id: null,
         el: null,
         visible: false,
         items: [],
@@ -10088,7 +10254,7 @@ const EnvData = {
     open(e) {
       let cm = this.getElement(e);
       if (!cm) return false;
-      this.fillMenu(cm.type);
+      this.fillMenu(cm);
       this.toggleVisibility();
       this.moveCm(cm);
     },
@@ -10110,13 +10276,18 @@ const EnvData = {
       this.cm.el.style.top = cm.y + 'px';
     },
 
-    fillMenu(type) {
-      this.cm.items = this.menu[type];
+    fillMenu(cm) {
+      this.cm.items = this.menu[cm.type];
+      this.cm.items = this.cm.items.map(item => {
+        item.id = cm.id;
+        return item;
+      });
     },
 
     getElement(ev) {
       let el = ev.toElement;
       let cm = {
+        id: el.getAttribute('item-id'),
         type: el.getAttribute('cm-type'),
         x: ev.clientX,
         y: ev.clientY
@@ -11717,7 +11888,7 @@ exports = module.exports = __webpack_require__(18)(undefined);
 
 
 // module
-exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ""]);
+exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ""]);
 
 // exports
 
@@ -11770,7 +11941,16 @@ var render = function() {
           "ul",
           { staticClass: "side-navigation" },
           [
-            _c("li", { staticClass: "menu-title" }, [_vm._v("Categories")]),
+            _c("li", { staticClass: "menu-title" }, [
+              _vm._v("Categories\n      "),
+              _c("div", { staticClass: "actions" }, [
+                _c(
+                  "span",
+                  { staticClass: "action", on: { click: _vm.addNewCategory } },
+                  [_c("i", { staticClass: "fa fa-plus" })]
+                )
+              ])
+            ]),
             _vm._v(" "),
             _vm._l(_vm.categories, function(category) {
               return _c("li", { staticClass: "item-title" }, [
@@ -11793,7 +11973,18 @@ var render = function() {
                     [_c("i", { staticClass: "fa fa-plus" })]
                   ),
                   _vm._v(" "),
-                  _vm._m(0, true),
+                  _c(
+                    "span",
+                    {
+                      staticClass: "action",
+                      on: {
+                        click: function($event) {
+                          _vm.editCategory(category)
+                        }
+                      }
+                    },
+                    [_c("i", { staticClass: "fa fa-pencil" })]
+                  ),
                   _vm._v(" "),
                   _c(
                     "span",
@@ -11816,28 +12007,25 @@ var render = function() {
       : _vm._e(),
     _vm._v(" "),
     _vm.categories.length == 0
-      ? _c("div", { staticClass: "no-items" }, [_vm._m(1)])
+      ? _c("div", { staticClass: "no-items" }, [
+          _c("div", { staticClass: "message" }, [
+            _c("h3", [_vm._v("No se encontraron categorias")]),
+            _vm._v(" "),
+            _c("h4", [
+              _vm._v("Presione "),
+              _c(
+                "a",
+                { attrs: { href: "#" }, on: { click: _vm.fireCategoryModal } },
+                [_c("i", { staticClass: "fa fa-plus" })]
+              ),
+              _vm._v(" para agregar una nueva")
+            ])
+          ])
+        ])
       : _vm._e()
   ])
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("span", { staticClass: "action" }, [
-      _c("i", { staticClass: "fa fa-pencil" })
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "message" }, [
-      _c("h3", [_vm._v("No se encontraron categorias")])
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 var esExports = { render: render, staticRenderFns: staticRenderFns }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
@@ -11991,7 +12179,7 @@ exports = module.exports = __webpack_require__(18)(undefined);
 
 
 // module
-exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ""]);
+exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ""]);
 
 // exports
 
@@ -12009,21 +12197,35 @@ var render = function() {
     "div",
     {
       staticClass: "todo",
-      attrs: { "cm-type": "todo-item", id: _vm.item.objId }
+      class: _vm.item.status.flag,
+      attrs: {
+        "cm-type": "todo-item",
+        "item-id": _vm.item.id,
+        id: _vm.item.objId
+      },
+      on: { click: _vm.toggleCollapse }
     },
     [
       _c("h2", { staticClass: "title" }, [
         _c("span", { staticClass: "category", style: _vm.item.category.style }),
         _vm._v("\n    " + _vm._s(_vm.item.title) + "\n    "),
         _c("i", {
-          staticClass: "fa fa-check status",
+          staticClass: "fa status",
+          class:
+            _vm.item.status.flag == "archived"
+              ? "fa-archive"
+              : _vm.item.status.flag == "waiting"
+                ? "fa-dot-circle-o"
+                : "fa-check",
           style: _vm.item.status.style
         })
       ]),
       _vm._v(" "),
-      _c("p", { staticClass: "description" }, [
-        _vm._v("\n    " + _vm._s(_vm.item.description) + "\n  ")
-      ])
+      !_vm.collapsed
+        ? _c("p", { staticClass: "description" }, [
+            _vm._v("\n    " + _vm._s(_vm.item.description) + "\n  ")
+          ])
+        : _vm._e()
     ]
   )
 }
@@ -13370,29 +13572,30 @@ var render = function() {
         }),
         _vm._v(" "),
         _vm.items.length == 0
-          ? _c("div", { staticClass: "no-items" }, [_vm._m(0)])
+          ? _c("div", { staticClass: "no-items" }, [
+              _c("div", { staticClass: "message" }, [
+                _c("h1", [_vm._v("No se encontraron tareas")]),
+                _vm._v(" "),
+                _c("h3", [
+                  _vm._v("Presione "),
+                  _c(
+                    "a",
+                    { attrs: { href: "#" }, on: { click: _vm.getTodos } },
+                    [_c("i", { staticClass: "fa fa-refresh" })]
+                  ),
+                  _vm._v(" para recargar, o bien "),
+                  _c("br"),
+                  _vm._v("agregue una desde la barra lateral.")
+                ])
+              ])
+            ])
           : _vm._e()
       ],
       2
     )
   ])
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "message" }, [
-      _c("h1", [_vm._v("No se encontraron tareas")]),
-      _vm._v(" "),
-      _c("h3", [
-        _vm._v("Presione "),
-        _c("i", { staticClass: "fa fa-refresh" }),
-        _vm._v(" para recargar")
-      ])
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 var esExports = { render: render, staticRenderFns: staticRenderFns }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
@@ -13662,9 +13865,9 @@ var render = function() {
       _vm._v(" "),
       _c("AddCategory"),
       _vm._v(" "),
-      _c("Sidebar"),
+      _c("EditCategory"),
       _vm._v(" "),
-      _c("Toolbar"),
+      _c("Sidebar"),
       _vm._v(" "),
       _c("ToDoList")
     ],
@@ -13865,12 +14068,12 @@ var render = function() {
           class: { "cm-text": item.title, "cm-action": !item.title },
           on: {
             click: function($event) {
-              _vm.actions[item.action](item.display)
+              _vm.actions[item.action](item.id)
             }
           }
         },
         [
-          _vm._v("\n    " + _vm._s(item.display)),
+          _vm._v("\n    " + _vm._s(item.display) + "\n  "),
           _c("i", { staticClass: "fa", class: item.icon })
         ]
       )
@@ -13920,6 +14123,397 @@ if (false) {
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 76 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__events__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_axios__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_axios___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_axios__);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+
+
+
+/* harmony default export */ __webpack_exports__["a"] = ({
+  name: 'EditCategory',
+  data() {
+    return {
+      errors: [],
+      visible: false,
+      category: {
+        title: null,
+        style: {
+          h: 0,
+          s: 0,
+          l: 0,
+          get result() {
+            return {
+              "background-color": "hsla(" + this.h + ", " + this.s + "%, " + this.l + "%, 0.8)"
+            };
+          },
+          get str() {
+            return JSON.stringify(this.result);
+          },
+          get resultStr() {
+            return `hsl(${this.h}, ${this.s}%, ${this.l}%)`;
+          }
+        },
+        get data() {
+          return {
+            id: this.id,
+            title: this.title,
+            style: this.style.str
+          };
+        }
+      }
+    };
+  },
+
+  mounted() {
+    __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$on('fire-category-edit-modal', this.open);
+  },
+
+  methods: {
+    open(category) {
+      this.category.id = category.id;
+      this.category.title = category.title;
+      this.category.style.h = this.parseStyle(category, 'h');
+      this.category.style.s = this.parseStyle(category, 's');
+      this.category.style.l = this.parseStyle(category, 'l');
+      this.visible = true;
+    },
+
+    save() {
+      if (!this.category.title) {
+
+        this.clearErrors();
+        this.exception('Ingresa un nombre para la categoria');
+      } else if (!this.category.style) {
+
+        this.exception('Selecciona un color que identifique la categoria');
+      } else {
+        __WEBPACK_IMPORTED_MODULE_1_axios___default.a.post("http://dev.lumen/categories/update", this.category.data).then(response => {
+          __WEBPACK_IMPORTED_MODULE_0__events__["a" /* EventBus */].$emit('category-updated', response.data);
+          this.visible = false;
+        }).catch(ex => {
+          this.exception('Hubo un problema...');
+        });
+        this.reset();
+      }
+    },
+
+    clearErrors() {
+      this.errors = [];
+    },
+
+    exception(str) {
+      this.errors.push({ message: str });
+    },
+
+    close(e) {
+      if (e.toElement.className == 'modal-wrapper') {
+        this.visible = false;
+        this.reset();
+      }
+    },
+
+    reset() {
+      this.clearErrors();
+      this.category.style.h = 0;
+      this.category.style.s = 0;
+      this.category.style.l = 0;
+    },
+
+    parseStyle(obj, code) {
+      let index = code == 'h' ? 0 : code == 's' ? 1 : 2;
+      let style = obj.style['background-color'].replace(/(hsla\(|\ |%)/g, '').split(',')[index];
+      return style;
+    }
+  }
+});
+
+/***/ }),
+/* 77 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_vue_loader_lib_selector_type_script_index_0_bustCache_EditCategory_vue__ = __webpack_require__(76);
+/* unused harmony namespace reexport */
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_vue_loader_lib_template_compiler_index_id_data_v_2c5a57d6_hasScoped_false_buble_transforms_node_modules_vue_loader_lib_selector_type_template_index_0_bustCache_EditCategory_vue__ = __webpack_require__(78);
+var disposed = false
+var normalizeComponent = __webpack_require__(1)
+/* script */
+
+
+/* template */
+
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_vue_loader_lib_selector_type_script_index_0_bustCache_EditCategory_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_vue_loader_lib_template_compiler_index_id_data_v_2c5a57d6_hasScoped_false_buble_transforms_node_modules_vue_loader_lib_selector_type_template_index_0_bustCache_EditCategory_vue__["a" /* default */],
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "app/components/EditCategory.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-2c5a57d6", Component.options)
+  } else {
+    hotAPI.reload("data-v-2c5a57d6", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+/* harmony default export */ __webpack_exports__["a"] = (Component.exports);
+
+
+/***/ }),
+/* 78 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _vm.visible
+    ? _c("div", { staticClass: "modal-wrapper", on: { click: _vm.close } }, [
+        _c(
+          "div",
+          { staticClass: "modal" },
+          [
+            _vm._l(_vm.errors, function(error) {
+              return _vm.errors.length > 0
+                ? _c("div", { staticClass: "error-wrapper" }, [
+                    _c("p", { staticClass: "error" }, [
+                      _vm._v(_vm._s(error.message))
+                    ])
+                  ])
+                : _vm._e()
+            }),
+            _vm._v(" "),
+            _c("div", { staticClass: "input-wrapper" }, [
+              _c("input", {
+                directives: [
+                  {
+                    name: "model",
+                    rawName: "v-model",
+                    value: _vm.category.title,
+                    expression: "category.title"
+                  }
+                ],
+                staticClass: "input",
+                attrs: { type: "text", name: "title", autofocus: "" },
+                domProps: { value: _vm.category.title },
+                on: {
+                  input: function($event) {
+                    if ($event.target.composing) {
+                      return
+                    }
+                    _vm.$set(_vm.category, "title", $event.target.value)
+                  }
+                }
+              }),
+              _vm._v(" "),
+              _c("label", { attrs: { for: "title" } }, [
+                _vm._v("Nombre de la categoria")
+              ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "color-selector-wrapper" }, [
+              _c("div", { staticClass: "color-selector" }, [
+                _c("div", { staticClass: "input-range-wrapper" }, [
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.category.style.h,
+                        expression: "category.style.h"
+                      }
+                    ],
+                    staticClass: "selector",
+                    attrs: {
+                      type: "range",
+                      min: "0",
+                      max: "255",
+                      name: "colorH"
+                    },
+                    domProps: { value: _vm.category.style.h },
+                    on: {
+                      __r: function($event) {
+                        _vm.$set(_vm.category.style, "h", $event.target.value)
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c("label", { attrs: { for: "colorH" } }, [
+                    _vm._v(_vm._s(_vm.category.style.h))
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "input-range-wrapper" }, [
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.category.style.s,
+                        expression: "category.style.s"
+                      }
+                    ],
+                    staticClass: "selector",
+                    attrs: {
+                      type: "range",
+                      min: "0",
+                      max: "100",
+                      name: "colorS"
+                    },
+                    domProps: { value: _vm.category.style.s },
+                    on: {
+                      __r: function($event) {
+                        _vm.$set(_vm.category.style, "s", $event.target.value)
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c("label", { attrs: { for: "colorS" } }, [
+                    _vm._v(_vm._s(_vm.category.style.s) + "%")
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "input-range-wrapper" }, [
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.category.style.l,
+                        expression: "category.style.l"
+                      }
+                    ],
+                    staticClass: "selector",
+                    attrs: {
+                      type: "range",
+                      min: "0",
+                      max: "100",
+                      name: "colorL"
+                    },
+                    domProps: { value: _vm.category.style.l },
+                    on: {
+                      __r: function($event) {
+                        _vm.$set(_vm.category.style, "l", $event.target.value)
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c("label", { attrs: { for: "colorL" } }, [
+                    _vm._v(_vm._s(_vm.category.style.l) + "%")
+                  ])
+                ])
+              ]),
+              _vm._v(" "),
+              _c(
+                "div",
+                {
+                  staticClass: "color-result",
+                  style: _vm.category.style.result
+                },
+                [
+                  _vm._v(
+                    "\n        " +
+                      _vm._s(_vm.category.style.resultStr) +
+                      "\n      "
+                  )
+                ]
+              )
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "form-footer-wrapper" }, [
+              _c(
+                "button",
+                {
+                  staticClass: "button primary",
+                  attrs: { type: "button" },
+                  on: { click: _vm.save }
+                },
+                [
+                  _c("i", { staticClass: "fa fa-plus" }),
+                  _vm._v(" Guardar cambios")
+                ]
+              )
+            ])
+          ],
+          2
+        )
+      ])
+    : _vm._e()
+}
+var staticRenderFns = []
+render._withStripped = true
+var esExports = { render: render, staticRenderFns: staticRenderFns }
+/* harmony default export */ __webpack_exports__["a"] = (esExports);
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-2c5a57d6", esExports)
+  }
+}
 
 /***/ })
 /******/ ]);
